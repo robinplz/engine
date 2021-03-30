@@ -10,8 +10,10 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "flutter/shell/platform/windows/text_input_manager_win32.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
 
@@ -73,19 +75,25 @@ class WindowWin32 {
   // Called when a resize occurs.
   virtual void OnResize(UINT width, UINT height) = 0;
 
+/*
   // Called when the pointer moves within the
   // window bounds.
-  virtual void OnPointerMove(double x, double y) = 0;
+  virtual void OnPointerMove(double x, double y, FlutterPointerDeviceKind kind, bool is_hover) = 0;
 
   // Called when the a mouse button, determined by |button|, goes down.
-  virtual void OnPointerDown(double x, double y, UINT button) = 0;
+  // If device |kind| is Touch, |button| could be ignored.
+  virtual void OnPointerDown(double x, double y, UINT button, FlutterPointerDeviceKind kind) = 0;
 
   // Called when the a mouse button, determined by |button|, goes from
   // down to up
-  virtual void OnPointerUp(double x, double y, UINT button) = 0;
+  // If device |kind| is Touch, |button| could be ignored.
+  virtual void OnPointerUp(double x, double y, UINT button, FlutterPointerDeviceKind kind) = 0;
+*/
 
+  virtual void OnPointerUpdate(std::vector<POINTER_INFO> pointers) = 0;
+  
   // Called when the mouse leaves the window.
-  virtual void OnPointerLeave() = 0;
+  virtual void OnPointerLeave(UINT32 pointer_id) = 0;
 
   // Called when the cursor should be set for the client area.
   virtual void OnSetCursor() = 0;

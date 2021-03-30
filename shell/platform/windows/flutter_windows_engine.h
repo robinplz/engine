@@ -95,7 +95,7 @@ class FlutterWindowsEngine {
   void SendWindowMetricsEvent(const FlutterWindowMetricsEvent& event);
 
   // Informs the engine of an incoming pointer event.
-  void SendPointerEvent(const FlutterPointerEvent& event);
+  void SendPointerEvent(const std::vector<FlutterPointerEvent>& events);
 
   // Informs the engine of an incoming key event.
   void SendKeyEvent(const FlutterKeyEvent& event,

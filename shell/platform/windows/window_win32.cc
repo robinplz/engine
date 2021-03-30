@@ -24,6 +24,10 @@ WindowWin32::WindowWin32() {
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
   current_dpi_ = GetDpiForHWND(nullptr);
+
+  if (!IsMouseInPointerEnabled()) {
+    EnableMouseInPointer(true);
+  }
 }
 
 WindowWin32::~WindowWin32() {
@@ -101,6 +105,7 @@ LRESULT CALLBACK WindowWin32::WndProc(HWND const window,
   return DefWindowProc(window, message, wparam, lparam);
 }
 
+/*
 void WindowWin32::TrackMouseLeaveEvent(HWND hwnd) {
   if (!tracking_mouse_leave_) {
     TRACKMOUSEEVENT tme;
@@ -111,6 +116,7 @@ void WindowWin32::TrackMouseLeaveEvent(HWND hwnd) {
     tracking_mouse_leave_ = true;
   }
 }
+*/
 
 void WindowWin32::OnImeSetContext(UINT const message,
                                   WPARAM const wparam,
@@ -194,20 +200,22 @@ WindowWin32::HandleMessage(UINT const message,
       current_height_ = height;
       HandleResize(width, height);
       break;
-    case WM_MOUSEMOVE:
-      TrackMouseLeaveEvent(window_handle_);
+    // case WM_MOUSEMOVE: {
+    //   TrackMouseLeaveEvent(window_handle_);
 
-      xPos = GET_X_LPARAM(lparam);
-      yPos = GET_Y_LPARAM(lparam);
-      OnPointerMove(static_cast<double>(xPos), static_cast<double>(yPos));
-      break;
-    case WM_MOUSELEAVE:;
-      OnPointerLeave();
-      // Once the tracked event is received, the TrackMouseEvent function
-      // resets. Set to false to make sure it's called once mouse movement is
-      // detected again.
-      tracking_mouse_leave_ = false;
-      break;
+    //   xPos = GET_X_LPARAM(lparam);
+    //   yPos = GET_Y_LPARAM(lparam);
+    //   bool l_button_down = (wparam & MK_LBUTTON) != 0;
+    //   OnPointerMove(static_cast<double>(xPos), static_cast<double>(yPos), kFlutterPointerDeviceKindMouse, !l_button_down);
+    //   break;
+    // }
+    // case WM_MOUSELEAVE:
+    //   OnPointerLeave();
+    //   // Once the tracked event is received, the TrackMouseEvent function
+    //   // resets. Set to false to make sure it's called once mouse movement is
+    //   // detected again.
+    //   tracking_mouse_leave_ = false;
+    //   break;
     case WM_SETCURSOR: {
       UINT hit_test_result = LOWORD(lparam);
       if (hit_test_result == HTCLIENT) {
@@ -222,43 +230,43 @@ WindowWin32::HandleMessage(UINT const message,
     case WM_KILLFOCUS:
       ::DestroyCaret();
       break;
-    case WM_LBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-    case WM_XBUTTONDOWN:
-      if (message == WM_LBUTTONDOWN) {
-        // Capture the pointer in case the user drags outside the client area.
-        // In this case, the "mouse leave" event is delayed until the user
-        // releases the button. It's only activated on left click given that
-        // it's more common for apps to handle dragging with only the left
-        // button.
-        SetCapture(window_handle_);
-      }
-      button_pressed = message;
-      if (message == WM_XBUTTONDOWN) {
-        button_pressed = GET_XBUTTON_WPARAM(wparam);
-      }
-      xPos = GET_X_LPARAM(lparam);
-      yPos = GET_Y_LPARAM(lparam);
-      OnPointerDown(static_cast<double>(xPos), static_cast<double>(yPos),
-                    button_pressed);
-      break;
-    case WM_LBUTTONUP:
-    case WM_RBUTTONUP:
-    case WM_MBUTTONUP:
-    case WM_XBUTTONUP:
-      if (message == WM_LBUTTONUP) {
-        ReleaseCapture();
-      }
-      button_pressed = message;
-      if (message == WM_XBUTTONUP) {
-        button_pressed = GET_XBUTTON_WPARAM(wparam);
-      }
-      xPos = GET_X_LPARAM(lparam);
-      yPos = GET_Y_LPARAM(lparam);
-      OnPointerUp(static_cast<double>(xPos), static_cast<double>(yPos),
-                  button_pressed);
-      break;
+    // case WM_LBUTTONDOWN:
+    // case WM_RBUTTONDOWN:
+    // case WM_MBUTTONDOWN:
+    // case WM_XBUTTONDOWN:
+    //   if (message == WM_LBUTTONDOWN) {
+    //     // Capture the pointer in case the user drags outside the client area.
+    //     // In this case, the "mouse leave" event is delayed until the user
+    //     // releases the button. It's only activated on left click given that
+    //     // it's more common for apps to handle dragging with only the left
+    //     // button.
+    //     SetCapture(window_handle_);
+    //   }
+    //   button_pressed = message;
+    //   if (message == WM_XBUTTONDOWN) {
+    //     button_pressed = GET_XBUTTON_WPARAM(wparam);
+    //   }
+    //   xPos = GET_X_LPARAM(lparam);
+    //   yPos = GET_Y_LPARAM(lparam);
+    //   OnPointerDown(static_cast<double>(xPos), static_cast<double>(yPos),
+    //                 button_pressed, kFlutterPointerDeviceKindMouse);
+    //   break;
+    // case WM_LBUTTONUP:
+    // case WM_RBUTTONUP:
+    // case WM_MBUTTONUP:
+    // case WM_XBUTTONUP:
+    //   if (message == WM_LBUTTONUP) {
+    //     ReleaseCapture();
+    //   }
+    //   button_pressed = message;
+    //   if (message == WM_XBUTTONUP) {
+    //     button_pressed = GET_XBUTTON_WPARAM(wparam);
+    //   }
+    //   xPos = GET_X_LPARAM(lparam);
+    //   yPos = GET_Y_LPARAM(lparam);
+    //   OnPointerUp(static_cast<double>(xPos), static_cast<double>(yPos),
+    //               button_pressed, kFlutterPointerDeviceKindMouse);
+    //   break;
     case WM_MOUSEWHEEL:
       OnScroll(0.0, -(static_cast<short>(HIWORD(wparam)) /
                       static_cast<double>(WHEEL_DELTA)));
@@ -365,7 +373,7 @@ WindowWin32::HandleMessage(UINT const message,
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
-    case WM_SYSKEYUP:
+    case WM_SYSKEYUP: {
       const bool is_keydown_message =
           (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
       // Check if this key produces a character. If so, the key press should
@@ -389,6 +397,70 @@ WindowWin32::HandleMessage(UINT const message,
         return 0;
       }
       break;
+    }
+
+    // case WM_TOUCH: {
+    //   UINT inputs_count = LOWORD(wparam);
+    //   HTOUCHINPUT touch_input_handle = (HTOUCHINPUT)lparam;
+    //   std::vector<TOUCHINPUT> inputs;
+    //   inputs.resize(inputs_count);
+    //   bool ok = GetTouchInputInfo(touch_input_handle, inputs_count, inputs.data(), sizeof(TOUCHINPUT));
+    //   if (!ok) {
+    //     // TODO: handle error here.
+    //     return 0;
+    //   }
+
+    //   for (auto& input : inputs) {
+    //     bool is_touch_down = (input.dwFlags & TOUCHEVENTF_DOWN) != 0;
+    //     bool is_touch_up = (input.dwFlags & TOUCHEVENTF_UP) != 0;
+    //     bool is_touch_move = (input.dwFlags & TOUCHEVENTF_MOVE) != 0;
+    //     if (is_touch_down || is_touch_up || is_touch_move) {
+    //       POINT point = {0};
+    //       point.x = (LONG)(input.x * 0.01);
+    //       point.y = (LONG)(input.y * 0.01);
+    //       ScreenToClient(window_handle_, &point);
+    //       if (is_touch_down) {
+    //         OnPointerDown(point.x, point.y, 0, kFlutterPointerDeviceKindTouch);
+    //       }
+    //       else if (is_touch_up) {
+    //         OnPointerUp(point.x, point.y, 0, kFlutterPointerDeviceKindTouch);
+    //       }
+    //       else {
+    //         OnPointerMove(point.x, point.y, kFlutterPointerDeviceKindTouch, false);
+    //       }
+    //     }
+    //     else {
+    //       // TODO: how to handle other flags?
+    //     }
+    //   }
+    //   return 0;
+    // }
+    case WM_POINTERDOWN:
+    case WM_POINTERUP:
+    case WM_POINTERUPDATE:
+    {
+      UINT32 pointer_id = GET_POINTERID_WPARAM(wparam);
+      const unsigned int MAX_POINTER_INFO_BUFFER_SIZE = 10;
+      POINTER_INFO pointer_info_buffer[MAX_POINTER_INFO_BUFFER_SIZE];
+      UINT32 pointer_count = MAX_POINTER_INFO_BUFFER_SIZE;
+      BOOL ok = GetPointerFrameInfo(pointer_id, &pointer_count, pointer_info_buffer);
+      if (!ok) {
+        // TODO: handle error.
+        return 0;
+      }
+
+      std::vector<POINTER_INFO> pointers(pointer_info_buffer, pointer_info_buffer + pointer_count);
+      OnPointerUpdate(std::move(pointers));
+
+      SkipPointerFrameMessages(pointer_id);
+      return 0;
+    }
+    case WM_POINTERLEAVE:
+    {
+      UINT32 pointer_id = GET_POINTERID_WPARAM(wparam);
+      OnPointerLeave(pointer_id);
+      return 0;
+    }
   }
 
   return DefWindowProc(window_handle_, message, wparam, result_lparam);

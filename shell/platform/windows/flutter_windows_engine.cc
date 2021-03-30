@@ -284,9 +284,9 @@ void FlutterWindowsEngine::SendWindowMetricsEvent(
   }
 }
 
-void FlutterWindowsEngine::SendPointerEvent(const FlutterPointerEvent& event) {
+void FlutterWindowsEngine::SendPointerEvent(const std::vector<FlutterPointerEvent>& events) {
   if (engine_) {
-    embedder_api_.SendPointerEvent(engine_, &event, 1);
+    embedder_api_.SendPointerEvent(engine_, events.data(), events.size());
   }
 }
 

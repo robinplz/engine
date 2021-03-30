@@ -33,10 +33,8 @@ class MockWin32Window : public WindowWin32 {
 
   MOCK_METHOD1(OnDpiScale, void(unsigned int));
   MOCK_METHOD2(OnResize, void(unsigned int, unsigned int));
-  MOCK_METHOD2(OnPointerMove, void(double, double));
-  MOCK_METHOD3(OnPointerDown, void(double, double, UINT));
-  MOCK_METHOD3(OnPointerUp, void(double, double, UINT));
-  MOCK_METHOD0(OnPointerLeave, void());
+  MOCK_METHOD1(OnPointerUpdate, void(std::vector<POINTER_INFO>));
+  MOCK_METHOD1(OnPointerLeave, void(unsigned int));
   MOCK_METHOD0(OnSetCursor, void());
   MOCK_METHOD1(OnText, void(const std::u16string&));
   MOCK_METHOD6(OnKey, bool(int, int, int, char32_t, bool, bool));

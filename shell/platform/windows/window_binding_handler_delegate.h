@@ -8,6 +8,8 @@
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
+#include <vector>
+
 namespace flutter {
 
 class WindowBindingHandlerDelegate {
@@ -17,25 +19,11 @@ class WindowBindingHandlerDelegate {
   // called on the platform thread.
   virtual void OnWindowSizeChanged(size_t width, size_t height) = 0;
 
-  // Notifies delegate that backing window mouse has moved.
-  // Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerMove(double x, double y) = 0;
-
-  // Notifies delegate that backing window mouse pointer button has been
-  // pressed. Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerDown(double x,
-                             double y,
-                             FlutterPointerMouseButtons button) = 0;
-
-  // Notifies delegate that backing window mouse pointer button has been
-  // released. Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerUp(double x,
-                           double y,
-                           FlutterPointerMouseButtons button) = 0;
+  virtual void OnPointerUpdate(std::vector<FlutterPointerEvent> pointers) = 0;
 
   // Notifies delegate that backing window mouse pointer has left the window.
   // Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerLeave() = 0;
+  virtual void OnPointerLeave(unsigned int pointer_id) = 0;
 
   // Notifies delegate that backing window has received text.
   // Typically called by currently configured WindowBindingHandler

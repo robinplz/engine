@@ -11,6 +11,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <set>
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/geometry.h"
@@ -82,20 +83,10 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void OnWindowSizeChanged(size_t width, size_t height) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnPointerMove(double x, double y) override;
+  void OnPointerUpdate(std::vector<FlutterPointerEvent> events) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnPointerDown(double x,
-                     double y,
-                     FlutterPointerMouseButtons button) override;
-
-  // |WindowBindingHandlerDelegate|
-  void OnPointerUp(double x,
-                   double y,
-                   FlutterPointerMouseButtons button) override;
-
-  // |WindowBindingHandlerDelegate|
-  void OnPointerLeave() override;
+  void OnPointerLeave(unsigned int pointer_id) override;
 
   // |WindowBindingHandlerDelegate|
   void OnText(const std::u16string&) override;
@@ -172,21 +163,14 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // dimensions in physical
   void SendWindowMetrics(size_t width, size_t height, double dpiscale) const;
 
-  // Reports a mouse movement to Flutter engine.
-  void SendPointerMove(double x, double y);
-
-  // Reports mouse press to Flutter engine.
-  void SendPointerDown(double x, double y);
-
-  // Reports mouse release to Flutter engine.
-  void SendPointerUp(double x, double y);
+  void SendPointerUpdate(std::vector<FlutterPointerEvent> pointers);
 
   // Reports mouse left the window client area.
   //
   // Win32 api doesn't have "mouse enter" event. Therefore, there is no
   // SendPointerEnter method. A mouse enter event is tracked then the "move"
   // event is called.
-  void SendPointerLeave();
+  void SendPointerLeave(unsigned int pointer_id);
 
   // Reports a keyboard character to Flutter engine.
   void SendText(const std::u16string&);
@@ -231,33 +215,10 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                   double delta_y,
                   int scroll_offset_multiplier);
 
-  // Sets |event_data|'s phase to either kMove or kHover depending on the
-  // current primary mouse button state.
-  void SetEventPhaseFromCursorButtonState(
-      FlutterPointerEvent* event_data) const;
-
   // Sends a pointer event to the Flutter engine based on given data.  Since
   // all input messages are passed in physical pixel values, no translation is
   // needed before passing on to engine.
-  void SendPointerEventWithData(const FlutterPointerEvent& event_data);
-
-  // Resets the mouse state to its default values.
-  void ResetMouseState() { mouse_state_ = MouseState(); }
-
-  // Updates the mouse state to whether the last event to Flutter had at least
-  // one mouse button pressed.
-  void SetMouseFlutterStateDown(bool is_down) {
-    mouse_state_.flutter_state_is_down = is_down;
-  }
-
-  // Updates the mouse state to whether the last event to Flutter was a kAdd
-  // event.
-  void SetMouseFlutterStateAdded(bool is_added) {
-    mouse_state_.flutter_state_is_added = is_added;
-  }
-
-  // Updates the currently pressed buttons.
-  void SetMouseButtons(uint64_t buttons) { mouse_state_.buttons = buttons; }
+  void SendPointerEventWithData(std::vector<FlutterPointerEvent> event_data);
 
   // Currently configured WindowsRenderTarget for this view used by
   // surface_manager for creation of render surfaces and bound to the physical
@@ -272,7 +233,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   std::unique_ptr<FlutterWindowsEngine> engine_;
 
   // Keeps track of mouse state in relation to the window.
-  MouseState mouse_state_;
+  // MouseState mouse_state_;
+  std::set<int> pointer_added_;
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<flutter::PluginRegistrar> internal_plugin_registrar_;

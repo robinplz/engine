@@ -130,28 +130,63 @@ void FlutterWindowWin32::OnResize(unsigned int width, unsigned int height) {
   }
 }
 
-void FlutterWindowWin32::OnPointerMove(double x, double y) {
-  binding_handler_delegate_->OnPointerMove(x, y);
-}
+void FlutterWindowWin32::OnPointerUpdate(std::vector<POINTER_INFO> pointer_info_s) {
+  std::vector<FlutterPointerEvent> events;
+  events.reserve(pointer_info_s.size());
+  for (auto& pointer_info : pointer_info_s) {
+    POINTER_FLAGS flags = pointer_info.pointerFlags;
 
-void FlutterWindowWin32::OnPointerDown(double x, double y, UINT button) {
-  uint64_t flutter_button = ConvertWinButtonToFlutterButton(button);
-  if (flutter_button != 0) {
-    binding_handler_delegate_->OnPointerDown(
-        x, y, static_cast<FlutterPointerMouseButtons>(flutter_button));
+    FlutterPointerEvent event;
+
+    // id
+    event.device = (int32_t)pointer_info.pointerId;
+
+    // setup phase
+    if (flags & POINTER_FLAG_DOWN) {
+      event.phase = FlutterPointerPhase::kDown;
+    }
+    else if (flags & POINTER_FLAG_UP) {
+      event.phase = FlutterPointerPhase::kUp;
+    }
+    else if (flags & POINTER_FLAG_UPDATE) {
+      if (flags & POINTER_FLAG_INCONTACT) {
+        event.phase = FlutterPointerPhase::kMove;
+      }
+      else {
+        event.phase = FlutterPointerPhase::kHover;
+      }
+    }
+    else if (flags & POINTER_FLAG_CANCELED) {
+      event.phase = FlutterPointerPhase::kCancel;
+    }
+
+    // setup buttons
+    int64_t buttons = 0;
+    if (flags & POINTER_FLAG_FIRSTBUTTON) { buttons |= FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary; }
+    if (flags & POINTER_FLAG_SECONDBUTTON) { buttons |= FlutterPointerMouseButtons::kFlutterPointerButtonMouseSecondary; }
+    // TODO: other buttons?
+    event.buttons = buttons;
+
+    // coordinate
+    POINT position = pointer_info.ptPixelLocation;
+    ScreenToClient(GetWindowHandle(), &position);
+    event.x = (double)position.x;
+    event.y = (double)position.y;
+
+    // device kind
+    switch (pointer_info.pointerType) {
+      case PT_TOUCH: event.device_kind = FlutterPointerDeviceKind::kFlutterPointerDeviceKindTouch; break;
+      // TODO: other types, like "Pen".
+      default: event.device_kind = FlutterPointerDeviceKind::kFlutterPointerDeviceKindMouse; break; 
+    }
+
+    events.push_back(event);
   }
+  binding_handler_delegate_->OnPointerUpdate(events);
 }
 
-void FlutterWindowWin32::OnPointerUp(double x, double y, UINT button) {
-  uint64_t flutter_button = ConvertWinButtonToFlutterButton(button);
-  if (flutter_button != 0) {
-    binding_handler_delegate_->OnPointerUp(
-        x, y, static_cast<FlutterPointerMouseButtons>(flutter_button));
-  }
-}
-
-void FlutterWindowWin32::OnPointerLeave() {
-  binding_handler_delegate_->OnPointerLeave();
+void FlutterWindowWin32::OnPointerLeave(UINT32 pointer_id) {
+  binding_handler_delegate_->OnPointerLeave(pointer_id);
 }
 
 void FlutterWindowWin32::OnSetCursor() {
